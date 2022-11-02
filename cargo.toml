@@ -1,0 +1,7 @@
+[workspace]
+exclude = ["benches"]
+members = [
+    "backends/*",
+    # "libs/*"
+]
+resolver = "2"
