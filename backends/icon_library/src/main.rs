@@ -3,6 +3,7 @@ use std::{sync::Arc, time::Instant};
 use actix_web::{middleware, web, App, HttpServer};
 use awc::{http::header, Client, Connector};
 use dotenv::dotenv;
+use reqwest;
 use rustls::{ClientConfig, OwnedTrustAnchor, RootCertStore};
 
 mod figma;
@@ -15,6 +16,7 @@ pub struct AppState {
     figma_file_key: String,
     figma_personal_access_token: String,
     awc_client: awc::Client,
+    reqwest_client: reqwest::Client,
 }
 
 #[actix_web::main]
@@ -34,10 +36,12 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         // create client _inside_ `HttpServer::new` closure to have one per worker thread
-        let client = Client::builder()
+        let awc_client = Client::builder()
             // a "connector" wraps the stream into an encrypted connection
             .connector(Connector::new().rustls(Arc::clone(&client_tls_config)))
             .finish();
+
+        let reqwest_client = reqwest::Client::new();
 
         App::new()
             .wrap(middleware::Logger::default())
@@ -45,7 +49,8 @@ async fn main() -> std::io::Result<()> {
                 figma_base_url: figma_base_url.clone(),
                 figma_file_key: figma_file_key.clone(),
                 figma_personal_access_token: figma_personal_access_token.clone(),
-                awc_client: client,
+                awc_client: awc_client,
+                reqwest_client: reqwest_client,
             }))
             .service(fetch_figma_file)
     })

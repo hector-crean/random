@@ -1,18 +1,17 @@
 use crate::{figma, AppState};
 use actix_web::{get, post, web, HttpResponse};
-use awc;
+use awc::{self, http};
 
-#[get("/")]
+#[get("/files")]
 async fn fetch_figma_file(state: web::Data<AppState>) -> HttpResponse {
     let url = format!("https://api.figma.com/v1/files/EGwEdET4TWpZ8baTA60amp");
 
     match state
         .awc_client
         .get(url)
-        .insert_header((
-            "X-FIGMA-TOKEN",
-            "figd_zCN63Lnpu9TQ0JE8xGu5SrfPxJ6JtnGZxIn78rHx",
-        ))
+        .insert_header((awc::http::header::USER_AGENT, "Actix-web"))
+        .insert_header(("X-Figma-Token", state.figma_personal_access_token.as_str()))
+        .insert_header((awc::http::header::CONTENT_TYPE, mime::APPLICATION_JSON))
         .send()
         .await
     {
